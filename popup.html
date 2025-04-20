@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>First Name Extractor</title>
+    <style>
+      body {
+        width: 300px;
+        height: 400px;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+      }
+      h1 {
+        color: #4285F4;
+      }
+      button {
+        background-color: #4285F4;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin-top: 20px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #3367D6;
+      }
+      #results {
+        margin-top: 20px;
+        text-align: left;
+        max-height: 120px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background-color: #f8f8f8;
+      }
+      .template-container {
+        margin-top: 20px;
+        text-align: left;
+      }
+      #templateText {
+        width: 100%;
+        height: 60px;
+        padding: 8px;
+        font-family: Arial, sans-serif;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        resize: vertical;
+      }
+      .warning {
+        color: #d93025;
+        font-size: 12px;
+        margin-top: 5px;
+        display: none;
+      }
+      .template-info {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+      }
+    </style>
+    <script src="popup.js"></script>
+  </head>
+  <body>
+    <h1>First Name Extractor</h1>
+    <p>Click the button to extract first names from the page</p>
+    <button id="extractNames">Extract Names</button>
+    
+    <div class="template-container">
+      <label for="templateText"><strong>Message Template:</strong></label>
+      <textarea id="templateText" placeholder="Enter your message template here. Use <name> as a placeholder for the first name."></textarea>
+      <div id="templateWarning" class="warning">Please include the &lt;name&gt; placeholder in your template.</div>
+      <div class="template-info">Your template will be saved automatically and used to create personalized messages.</div>
+    </div>
+    
+    <div id="results"></div>
+  </body>
+</html>
