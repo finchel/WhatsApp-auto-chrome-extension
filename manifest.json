@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "First Name Extractor for WhatsApp",
-  "version": "1.0",
-  "description": "Extract first names from WhatsApp Web and create personalized messages",
+  "name": "WhatsApp Holiday Greeter",
+  "version": "2.0",
+  "description": "Click a WhatsApp chat to auto-generate a personalized Hebrew holiday greeting",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -17,9 +17,7 @@
     "128": "images/icon128.png"
   },
   "permissions": [
-    "storage",
-    "clipboardWrite",
-    "clipboardRead"
+    "storage"
   ],
   "host_permissions": [
     "https://web.whatsapp.com/*"
@@ -28,10 +26,16 @@
     {
       "matches": ["https://web.whatsapp.com/*"],
       "js": ["content.js"],
-      "run_at": "document_end"
+      "run_at": "document_idle"
     }
   ],
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["names.json"],
+      "matches": ["https://web.whatsapp.com/*"]
+    }
+  ]
 }

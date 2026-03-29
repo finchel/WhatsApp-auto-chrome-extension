@@ -1,78 +1,167 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>First Name Extractor</title>
-    <style>
-      body {
-        width: 300px;
-        height: 400px;
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding: 20px;
-      }
-      h1 {
-        color: #4285F4;
-      }
-      button {
-        background-color: #4285F4;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        margin-top: 20px;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-      button:hover {
-        background-color: #3367D6;
-      }
-      #results {
-        margin-top: 20px;
-        text-align: left;
-        max-height: 120px;
-        overflow-y: auto;
-        border: 1px solid #ccc;
-        padding: 10px;
-        background-color: #f8f8f8;
-      }
-      .template-container {
-        margin-top: 20px;
-        text-align: left;
-      }
-      #templateText {
-        width: 100%;
-        height: 60px;
-        padding: 8px;
-        font-family: Arial, sans-serif;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        resize: vertical;
-      }
-      .warning {
-        color: #d93025;
-        font-size: 12px;
-        margin-top: 5px;
-        display: none;
-      }
-      .template-info {
-        font-size: 12px;
-        color: #666;
-        margin-top: 5px;
-      }
-    </style>
-    <script src="popup.js"></script>
-  </head>
-  <body>
-    <h1>First Name Extractor</h1>
-    <p>Click the button to extract first names from the page</p>
-    <button id="extractNames">Extract Names</button>
-    
-    <div class="template-container">
-      <label for="templateText"><strong>Message Template:</strong></label>
-      <textarea id="templateText" placeholder="Enter your message template here. Use <name> as a placeholder for the first name."></textarea>
-      <div id="templateWarning" class="warning">Please include the &lt;name&gt; placeholder in your template.</div>
-      <div class="template-info">Your template will be saved automatically and used to create personalized messages.</div>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>WhatsApp Messages</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 340px;
+      font-family: Arial, sans-serif;
+      padding: 16px;
+      background: #f0f2f5;
+      color: #111b21;
+      direction: rtl;
+    }
+    h1 {
+      font-size: 16px;
+      color: #00a884;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: #667781;
+      margin-bottom: 16px;
+    }
+    .section {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 4px;
+      color: #54656f;
+    }
+    textarea {
+      width: 100%;
+      height: 56px;
+      padding: 8px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      border: 1px solid #d1d7db;
+      border-radius: 6px;
+      resize: vertical;
+      direction: rtl;
+      outline: none;
+    }
+    textarea:focus { border-color: #00a884; }
+    .template-group { margin-bottom: 10px; }
+    .template-group:last-child { margin-bottom: 0; }
+    .info {
+      font-size: 11px;
+      color: #667781;
+      margin-top: 6px;
+    }
+    .info code {
+      background: #e9edef;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 11px;
+    }
+    .warning {
+      color: #dc3545;
+      font-size: 11px;
+      margin-top: 4px;
+      display: none;
+    }
+    .saved-names-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .saved-names-header h2 {
+      font-size: 13px;
+      color: #54656f;
+    }
+    .toggle-icon {
+      font-size: 12px;
+      color: #667781;
+      transition: transform 0.2s;
+    }
+    .toggle-icon.open { transform: rotate(90deg); }
+    #namesList {
+      margin-top: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+    #namesList.open { display: block; }
+    .name-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #f0f2f5;
+      font-size: 13px;
+    }
+    .name-item:last-child { border-bottom: none; }
+    .name-en { color: #667781; }
+    .name-he { font-weight: bold; }
+    .name-gender {
+      font-size: 11px;
+      color: #00a884;
+      margin: 0 4px;
+    }
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #dc3545;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .delete-btn:hover { color: #a71d2a; }
+    .empty-msg {
+      font-size: 12px;
+      color: #667781;
+      text-align: center;
+      padding: 8px;
+    }
+    .status {
+      font-size: 11px;
+      color: #00a884;
+      text-align: center;
+      margin-top: 4px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .status.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+  <h1>WhatsApp הודעות אישיות</h1>
+  <p class="subtitle">לחצו על צ'אט 1:1 בוואטסאפ להוספת הודעה אישית</p>
+
+  <div class="section">
+    <div class="template-group">
+      <label for="templateMale">תבנית לזכר:</label>
+      <textarea id="templateMale" placeholder="הכניסו תבנית הודעה לזכר"></textarea>
     </div>
-    
-    <div id="results"></div>
-  </body>
+    <div class="template-group">
+      <label for="templateFemale">תבנית לנקבה:</label>
+      <textarea id="templateFemale" placeholder="הכניסו תבנית הודעה לנקבה"></textarea>
+    </div>
+    <div class="info">השתמשו ב-<code>&lt;name&gt;</code> כמציין מיקום לשם בעברית</div>
+    <div id="warningMale" class="warning">חסר <code>&lt;name&gt;</code> בתבנית לזכר</div>
+    <div id="warningFemale" class="warning">חסר <code>&lt;name&gt;</code> בתבנית לנקבה</div>
+    <div id="saveStatus" class="status">נשמר ✓</div>
+  </div>
+
+  <div class="section">
+    <div class="saved-names-header" id="namesToggle">
+      <h2>שמות שנשמרו</h2>
+      <span class="toggle-icon" id="toggleIcon">▶</span>
+    </div>
+    <div id="namesList"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
 </html>

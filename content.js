@@ -1,482 +1,498 @@
-// Create a more robust floating display that's less likely to be affected by page styles
-function createFloatingDisplay() {
-  let display = document.getElementById('name-extractor-display');
-  
-  // If the display already exists, remove it and create a new one
-  // This helps if there were any issues with the previous instance
-  if (display) {
-    display.remove();
-  }
-  
-  // Create a new display element with more robust styling
-  display = document.createElement('div');
-  display.id = 'name-extractor-display';
-  
-  // Use !important to override any possible conflicting styles
-  display.style.cssText = `
-    position: fixed !important;
-    top: 20px !important;
-    right: 20px !important;
-    background-color: #4285F4 !important;
-    color: white !important;
-    padding: 10px 15px !important;
-    border-radius: 4px !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
-    z-index: 9999999 !important;
-    font-family: Arial, sans-serif !important;
-    font-size: 16px !important;
-    font-weight: bold !important;
-    opacity: 0 !important;
-    transition: opacity 0.3s !important;
-    pointer-events: auto !important;
-    display: flex !important;
-    align-items: center !important;
-    flex-direction: column !important;
-  `;
-  
-  // Create content container
-  const content = document.createElement('span');
-  content.id = 'name-extractor-content';
-  content.style.cssText = `
-    margin-right: 10px !important;
-    color: white !important;
-    font-size: 16px !important;
-  `;
-  
-  // Add clipboard notification
-  const clipboard = document.createElement('span');
-  clipboard.id = 'name-extractor-clipboard';
-  clipboard.style.cssText = `
-    font-size: 12px !important;
-    margin-top: 5px !important;
-    color: white !important;
-    opacity: 0.8 !important;
-  `;
-  clipboard.textContent = 'Personalized message copied to clipboard!';
-  
-  // Create close button
-  const closeButton = document.createElement('span');
-  closeButton.textContent = '×';
-  closeButton.style.cssText = `
-    cursor: pointer !important;
-    font-size: 20px !important;
-    font-weight: bold !important;
-    color: white !important;
-    position: absolute !important;
-    top: 5px !important;
-    right: 10px !important;
-  `;
-  
-  closeButton.addEventListener('click', function(e) {
-    e.stopPropagation();
-    display.style.opacity = '0';
-  });
-  
-  display.appendChild(content);
-  display.appendChild(clipboard);
-  display.appendChild(closeButton);
-  document.body.appendChild(display);
-  
-  // Add a simple click function to help with debugging
-  display.addEventListener('click', function() {
-    console.log('Name display clicked');
-  });
-  
-  return display;
-}
+// =============================================================================
+// WhatsApp Personalized Hebrew Message Extension - Content Script
+// =============================================================================
 
-// Initialize the display as soon as the script loads
-const display = createFloatingDisplay();
+let nameDictionary = {};
+let userNames = {};
+let templateMale = '<name> היקר, מאחל לך חג פסח שמח ושקט!';
+let templateFemale = '<name> היקרה, מאחלת לך חג פסח שמח ושקט!';
+let lastClickTime = 0;
+const DEBOUNCE_MS = 1000;
 
-// Function to copy text to clipboard
-function copyToClipboard(text) {
-  return new Promise((resolve, reject) => {
-    console.log('Attempting to copy to clipboard:', text);
-    
-    // The new Clipboard API
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text)
-        .then(() => {
-          console.log('Text copied to clipboard successfully using Clipboard API');
-          resolve(true);
-        })
-        .catch(err => {
-          console.error('Error copying text using Clipboard API', err);
-          // Fall back to execCommand method
-          tryExecCommandCopy(text, resolve);
-        });
-    } else {
-      // Fallback for browsers that don't support the Clipboard API
-      tryExecCommandCopy(text, resolve);
-    }
-  });
-}
+// =============================================================================
+// Initialization
+// =============================================================================
 
-// Helper function for execCommand copy fallback
-function tryExecCommandCopy(text, resolve) {
-  const textArea = document.createElement('textarea');
-  textArea.value = text;
-  textArea.style.position = 'fixed';  // Avoid scrolling to bottom
-  textArea.style.top = '0';
-  textArea.style.left = '0';
-  textArea.style.width = '2em';
-  textArea.style.height = '2em';
-  textArea.style.padding = '0';
-  textArea.style.border = 'none';
-  textArea.style.outline = 'none';
-  textArea.style.boxShadow = 'none';
-  textArea.style.background = 'transparent';
-  document.body.appendChild(textArea);
-  
+async function initialize() {
   try {
-    textArea.focus();
-    textArea.select();
-    
-    const successful = document.execCommand('copy');
-    document.body.removeChild(textArea);
-    
-    if (successful) {
-      console.log('Text copied to clipboard successfully using execCommand');
-      resolve(true);
-    } else {
-      console.error('Unable to copy text to clipboard using execCommand');
-      resolve(false);
-    }
+    const resp = await fetch(chrome.runtime.getURL('names.json'));
+    nameDictionary = await resp.json();
+    console.log(`[WA-Msg] Loaded ${Object.keys(nameDictionary).length} names from dictionary`);
   } catch (err) {
-    document.body.removeChild(textArea);
-    console.error('Error copying text using execCommand', err);
-    resolve(false);
+    console.error('[WA-Msg] Failed to load names.json:', err);
   }
-}
 
-// Global variable to hold the current template and a fallback for RTL text
-let currentTemplate = "Dear <n>, happy holidays and I wish you well";
-// Hebrew default template for RTL support
-let rtlDefaultTemplate = "חג שמח <n> יקרה!";
-
-// Function to detect if text is RTL (Hebrew, Arabic, etc.)
-function isRTL(text) {
-  // Check for Hebrew or Arabic characters
-  return /[\u0590-\u05FF\u0600-\u06FF]/.test(text);
-}
-
-// Store the template in local storage for recovery from extension context invalidation
-function storeTemplateLocally(template) {
   try {
-    localStorage.setItem('name-extractor-template', template);
-    console.log('Template stored in local storage:', template);
-  } catch (error) {
-    console.error('Error storing template in local storage:', error);
+    const stored = await chrome.storage.local.get(['userNames', 'templateMale', 'templateFemale']);
+    userNames = stored.userNames || {};
+    if (stored.templateMale) templateMale = stored.templateMale;
+    if (stored.templateFemale) templateFemale = stored.templateFemale;
+    console.log(`[WA-Msg] Loaded ${Object.keys(userNames).length} user-saved names`);
+  } catch (err) {
+    console.error('[WA-Msg] Failed to load from storage:', err);
   }
+
+  // Listen for template/name changes from popup
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local') return;
+    if (changes.templateMale) templateMale = changes.templateMale.newValue;
+    if (changes.templateFemale) templateFemale = changes.templateFemale.newValue;
+    if (changes.userNames) userNames = changes.userNames.newValue || {};
+  });
+
+  // Attach click listener (capture phase)
+  document.addEventListener('click', handleChatClick, true);
+  console.log('[WA-Msg] Extension initialized');
 }
 
-// Get template from local storage (as backup if chrome.storage fails)
-function getLocalTemplate() {
-  try {
-    const template = localStorage.getItem('name-extractor-template');
-    if (template) {
-      console.log('Retrieved template from local storage:', template);
-      return template;
+// =============================================================================
+// Name Lookup
+// =============================================================================
+
+function isHebrew(text) {
+  return /[\u0590-\u05FF]/.test(text);
+}
+
+function isPhoneNumber(text) {
+  return /^\+?\d[\d\s\-()]+$/.test(text.trim());
+}
+
+function stripEmojis(text) {
+  return text.replace(/[\u{1F600}-\u{1F9FF}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}✅️⭐❤️]/gu, '').trim();
+}
+
+function extractFirstName(fullName) {
+  const cleaned = stripEmojis(fullName).trim();
+  if (!cleaned) return null;
+  // For single-word names, use the whole thing
+  const parts = cleaned.split(/\s+/);
+  return parts[0];
+}
+
+function lookupName(firstName) {
+  const key = firstName.toLowerCase().trim();
+  // User names take priority over built-in dictionary
+  return userNames[key] || nameDictionary[key] || null;
+}
+
+// =============================================================================
+// Message Building
+// =============================================================================
+
+function buildMessage(hebrewName, gender) {
+  const effectiveGender = gender || 'm';
+  const template = effectiveGender === 'f' ? templateFemale : templateMale;
+  return template.replace(/<name>/g, hebrewName);
+}
+
+// =============================================================================
+// WhatsApp DOM Interaction
+// =============================================================================
+
+function findMessageInput() {
+  return document.querySelector('[data-lexical-editor="true"]')
+    || document.querySelector('div[contenteditable="true"][data-tab="10"]')
+    || document.querySelector('div[contenteditable="true"][role="textbox"]');
+}
+
+function waitForMessageInput(timeout = 3000) {
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
+
+    function check() {
+      const el = findMessageInput();
+      if (el) {
+        resolve(el);
+        return;
+      }
+
+      if (Date.now() - startTime > timeout) {
+        reject(new Error('Message input not found'));
+        return;
+      }
+
+      setTimeout(check, 150);
     }
-  } catch (error) {
-    console.error('Error getting template from local storage:', error);
-  }
-  return null;
+
+    check();
+  });
 }
 
-// Function to get saved template with fallback mechanisms
-function getSavedTemplate() {
-  return new Promise((resolve) => {
-    try {
-      chrome.storage.local.get(['nameExtractorTemplate'], function(result) {
-        if (chrome.runtime.lastError) {
-          console.warn('Chrome storage error:', chrome.runtime.lastError);
-          // Try fallback to localStorage
-          const localTemplate = getLocalTemplate();
-          if (localTemplate) {
-            resolve(localTemplate);
-          } else {
-            // If we have no template, check if we need RTL default
-            const documentDir = document.dir || document.documentElement.dir;
-            if (documentDir === 'rtl') {
-              resolve(rtlDefaultTemplate);
-            } else {
-              resolve(currentTemplate); // Use the current cached template
-            }
-          }
-          return;
-        }
-        
-        if (result.nameExtractorTemplate) {
-          // Store the template locally as backup
-          storeTemplateLocally(result.nameExtractorTemplate);
-          resolve(result.nameExtractorTemplate);
-        } else {
-          // Try fallback to localStorage
-          const localTemplate = getLocalTemplate();
-          if (localTemplate) {
-            resolve(localTemplate);
-          } else {
-            // If we have no template, check if we need RTL default
-            const documentDir = document.dir || document.documentElement.dir;
-            if (documentDir === 'rtl') {
-              resolve(rtlDefaultTemplate);
-            } else {
-              resolve(currentTemplate); // Use the current cached template
-            }
+function isOneOnOneChat(input) {
+  const ariaLabel = (input.getAttribute('aria-label') || '').toLowerCase();
+  console.log('[WA-Msg] Input aria-label:', ariaLabel);
+
+  // English: "type a message to group X" / "to channel X"
+  if (ariaLabel.includes('to group ') || ariaLabel.includes('to channel ')) return false;
+  // Hebrew: "הקלד הודעה לקבוצה" (group) / "הקלד הודעה לערוץ" (channel)
+  if (ariaLabel.includes('לקבוצה') || ariaLabel.includes('לערוץ')) return false;
+
+  // If it's a contenteditable with role="textbox", it's a valid chat input
+  // No need to verify the exact "type a message" string which varies by locale
+  return true;
+}
+
+function insertIntoMessageInput(input, text) {
+  input.focus();
+
+  // Place cursor at end
+  const sel = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(input);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  // Primary: execCommand (verified working with WhatsApp's Lexical editor)
+  const success = document.execCommand('insertText', false, text);
+
+  if (!success) {
+    console.warn('[WA-Msg] execCommand failed, using DataTransfer fallback');
+    const dt = new DataTransfer();
+    dt.setData('text/plain', text);
+
+    const beforeInput = new InputEvent('beforeinput', {
+      inputType: 'insertFromPaste',
+      dataTransfer: dt,
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+    });
+
+    if (input.dispatchEvent(beforeInput)) {
+      const textNode = document.createTextNode(text);
+      const r = sel.getRangeAt(0);
+      r.deleteContents();
+      r.insertNode(textNode);
+      r.setStartAfter(textNode);
+      r.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r);
+
+      input.dispatchEvent(new InputEvent('input', {
+        inputType: 'insertFromPaste',
+        dataTransfer: dt,
+        bubbles: true,
+        composed: true,
+      }));
+    }
+  }
+
+  return true;
+}
+
+// =============================================================================
+// Click Handler
+// =============================================================================
+
+async function handleChatClick(event) {
+  // Find the chat row
+  const row = event.target.closest('[role="row"]');
+  if (!row) return;
+
+  // Must be inside the chat list grid
+  const grid = row.closest('[role="grid"]');
+  if (!grid) return;
+
+  // Debounce rapid clicks
+  const now = Date.now();
+  if (now - lastClickTime < DEBOUNCE_MS) return;
+  lastClickTime = now;
+
+  // Extract contact name from the row
+  const nameSpan = row.querySelector('span[title][dir="auto"]');
+  if (!nameSpan) return;
+
+  const fullName = nameSpan.getAttribute('title').trim();
+  if (!fullName || fullName.length < 2) return;
+
+  // Skip phone numbers
+  if (isPhoneNumber(fullName)) {
+    console.log('[WA-Msg] Skipping phone number:', fullName);
+    return;
+  }
+
+  const firstName = extractFirstName(fullName);
+  if (!firstName || firstName.length < 2) return;
+
+  console.log('[WA-Msg] Clicked chat:', fullName, '→ first name:', firstName);
+
+  try {
+    // Small delay to let WhatsApp start switching chats
+    await new Promise(r => setTimeout(r, 300));
+
+    // Wait for the chat to open and message input to appear
+    const input = await waitForMessageInput();
+
+    // Only process 1:1 chats
+    if (!isOneOnOneChat(input)) {
+      console.log('[WA-Msg] Skipping non-1:1 chat');
+      return;
+    }
+
+    // Check if name is already Hebrew
+    if (isHebrew(firstName)) {
+      const message = buildMessage(firstName, 'm'); // Default masculine for Hebrew names
+      insertIntoMessageInput(input, message);
+      showToast(`✓ ${firstName}`);
+      return;
+    }
+
+    // Look up in dictionary
+    const entry = lookupName(firstName);
+
+    if (entry) {
+      const message = buildMessage(entry.he, entry.gender);
+      insertIntoMessageInput(input, message);
+      showToast(`✓ ${firstName} → ${entry.he}`);
+    } else {
+      // Show overlay for unknown name
+      showUnknownNameOverlay(firstName, (hebrewName, gender) => {
+        if (hebrewName) {
+          const message = buildMessage(hebrewName, gender);
+          // Re-find input in case DOM changed
+          const currentInput = document.querySelector('[data-lexical-editor="true"]')
+            || document.querySelector('div[contenteditable="true"][data-tab="10"]');
+          if (currentInput) {
+            insertIntoMessageInput(currentInput, message);
+            showToast(`✓ ${firstName} → ${hebrewName} (saved)`);
           }
         }
       });
-    } catch (error) {
-      console.warn('Error in getSavedTemplate:', error);
-      // Try fallback to localStorage
-      const localTemplate = getLocalTemplate();
-      if (localTemplate) {
-        resolve(localTemplate);
-      } else {
-        // If that fails too, use the cached template
-        resolve(currentTemplate);
-      }
     }
-  });
+  } catch (err) {
+    console.error('[WA-Msg] Error processing chat click:', err);
+  }
 }
 
-// Function to show a name in the display and copy personalized message to clipboard
-async function showName(name) {
-  console.log('showName called with:', name);
-  
-  const contentElement = document.getElementById('name-extractor-content');
-  if (!contentElement) {
-    console.error('Content element not found');
-    return;
-  }
-  
-  contentElement.textContent = name;
-  
-  const display = document.getElementById('name-extractor-display');
-  if (!display) {
-    console.error('Display element not found');
-    return;
-  }
-  
-  // Make display visible
-  display.style.opacity = '1';
-  
-  // Get template with fallbacks for extension context invalidation
-  let template = currentTemplate; // Start with cached template
-  
-  try {
-    // Try to get the latest template with our robust method
-    const latestTemplate = await getSavedTemplate();
-    if (latestTemplate) {
-      template = latestTemplate;
-      currentTemplate = latestTemplate; // Update our cache
-    }
-  } catch (error) {
-    console.warn('Using fallback template due to error:', error);
-  }
-  
-  console.log('Using template:', template);
-  
-  // Replace placeholder with actual name
-  let personalizedMessage = template;
-  
-  if (template.includes('<n>')) {
-    personalizedMessage = template.replace(/<n>/g, name);
-    console.log('Replaced <n> placeholder');
-  } else {
-    console.warn('Template does not contain <n> placeholder. Adding name at the beginning.');
-    // If no placeholder, add the name at the beginning
-    personalizedMessage = name + ", " + template;
-  }
-  
-  // Copy the personalized message to clipboard
-  console.log('Personalized message to copy:', personalizedMessage);
-  const clipboardSuccess = await copyToClipboard(personalizedMessage);
-  
-  // Update clipboard notification text based on success
-  const clipboardElement = document.getElementById('name-extractor-clipboard');
-  if (clipboardElement) {
-    if (clipboardSuccess) {
-      clipboardElement.textContent = 'Personalized message copied to clipboard!';
-      clipboardElement.style.color = 'white';
-    } else {
-      clipboardElement.textContent = 'Failed to copy to clipboard. Please try again.';
-      clipboardElement.style.color = '#ffcccc';
-    }
-  }
-  
-  // Auto-hide after 5 seconds
+// =============================================================================
+// Toast Notification
+// =============================================================================
+
+function showToast(message) {
+  // Remove existing toast
+  const existing = document.getElementById('wa-msg-toast-host');
+  if (existing) existing.remove();
+
+  const host = document.createElement('div');
+  host.id = 'wa-msg-toast-host';
+  const shadow = host.attachShadow({ mode: 'open' });
+
+  shadow.innerHTML = `
+    <style>
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #00a884;
+        color: white;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        font-weight: bold;
+        z-index: 10000000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        direction: rtl;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+    </style>
+    <div class="toast">${message}</div>
+  `;
+
+  document.body.appendChild(host);
+  const toast = shadow.querySelector('.toast');
+
+  // Fade in
+  requestAnimationFrame(() => { toast.style.opacity = '1'; });
+
+  // Fade out and remove
   setTimeout(() => {
-    display.style.opacity = '0';
-  }, 5000);
-  
-  // Try to notify background script, but don't fail if context is invalidated
-  try {
-    chrome.runtime.sendMessage({
-      action: "nameClicked",
-      name: name,
-      message: personalizedMessage
-    }, response => {
-      if (chrome.runtime.lastError) {
-        console.log('Error sending message to background (normal if extension reloaded):', 
-                   chrome.runtime.lastError.message);
-      }
-    });
-  } catch (error) {
-    console.log('Could not send message to background (normal if extension reloaded):', error);
-    // This is expected if the extension context is invalidated, so no need to handle further
-  }
+    toast.style.opacity = '0';
+    setTimeout(() => host.remove(), 300);
+  }, 3000);
 }
 
-// Initialize by trying to load the template from various sources
-function initializeTemplates() {
-  console.log('Initializing templates...');
-  
-  // First try chrome storage (will work if extension context is valid)
-  try {
-    chrome.storage.local.get(['nameExtractorTemplate'], function(result) {
-      if (chrome.runtime.lastError) {
-        console.warn('Chrome storage error during init:', chrome.runtime.lastError);
-        loadFromLocalStorageFallback();
-        return;
+// =============================================================================
+// Unknown Name Overlay
+// =============================================================================
+
+function showUnknownNameOverlay(englishName, onComplete) {
+  // Remove any existing overlay
+  const existing = document.getElementById('wa-msg-overlay-host');
+  if (existing) existing.remove();
+
+  const host = document.createElement('div');
+  host.id = 'wa-msg-overlay-host';
+  const shadow = host.attachShadow({ mode: 'open' });
+
+  shadow.innerHTML = `
+    <style>
+      .backdrop {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.4);
+        z-index: 9999999;
       }
-      
-      if (result.nameExtractorTemplate) {
-        currentTemplate = result.nameExtractorTemplate;
-        // Also save to localStorage for backup
-        storeTemplateLocally(currentTemplate);
-        console.log('Loaded template from chrome.storage:', currentTemplate);
-      } else {
-        loadFromLocalStorageFallback();
+      .overlay {
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+        z-index: 10000000;
+        font-family: Arial, sans-serif;
+        direction: rtl;
+        min-width: 300px;
+        text-align: right;
       }
-    });
-  } catch (error) {
-    console.warn('Error accessing chrome storage:', error);
-    loadFromLocalStorageFallback();
+      h3 {
+        margin: 0 0 16px 0;
+        color: #111b21;
+        font-size: 16px;
+      }
+      .english-name {
+        color: #00a884;
+        font-weight: bold;
+      }
+      label {
+        display: block;
+        margin-bottom: 6px;
+        color: #54656f;
+        font-size: 14px;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #d1d7db;
+        border-radius: 8px;
+        direction: rtl;
+        margin-bottom: 12px;
+        box-sizing: border-box;
+        outline: none;
+      }
+      input[type="text"]:focus {
+        border-color: #00a884;
+      }
+      .gender-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        color: #111b21;
+      }
+      .gender-row label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        color: #111b21;
+      }
+      .buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-start;
+      }
+      button {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .save-btn {
+        background: #00a884;
+        color: white;
+      }
+      .save-btn:hover {
+        background: #008f72;
+      }
+      .skip-btn {
+        background: #f0f2f5;
+        color: #54656f;
+      }
+      .skip-btn:hover {
+        background: #e2e5e9;
+      }
+    </style>
+    <div class="backdrop"></div>
+    <div class="overlay">
+      <h3>שם לא נמצא: <span class="english-name">${englishName}</span></h3>
+      <label>שם בעברית:</label>
+      <input type="text" id="hebrew-input" placeholder="הקלידו את השם בעברית" />
+      <div class="gender-row">
+        <label><input type="radio" name="gender" value="m" checked /> זכר</label>
+        <label><input type="radio" name="gender" value="f" /> נקבה</label>
+      </div>
+      <div class="buttons">
+        <button class="save-btn" id="save-btn">שמור והשתמש</button>
+        <button class="skip-btn" id="skip-btn">דלג</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(host);
+
+  const hebrewInput = shadow.getElementById('hebrew-input');
+  const saveBtn = shadow.getElementById('save-btn');
+  const skipBtn = shadow.getElementById('skip-btn');
+  const backdrop = shadow.querySelector('.backdrop');
+
+  // Focus the input
+  setTimeout(() => hebrewInput.focus(), 100);
+
+  function cleanup() {
+    host.remove();
   }
-  
-  function loadFromLocalStorageFallback() {
-    // Try to get from localStorage as fallback
-    const localTemplate = getLocalTemplate();
-    if (localTemplate) {
-      currentTemplate = localTemplate;
-      console.log('Loaded template from localStorage fallback:', currentTemplate);
-    } else {
-      // Choose appropriate default based on page direction
-      const documentDir = document.dir || document.documentElement.dir;
-      if (documentDir === 'rtl') {
-        currentTemplate = rtlDefaultTemplate;
-        console.log('Using RTL default template');
-      } else {
-        // Keep the existing default
-        console.log('Using default template:', currentTemplate);
-      }
-    }
-  }
-}
 
-// Run the initialization
-initializeTemplates();
-
-// Try to establish listener for messages if extension context is valid
-try {
-  // Listen for messages from background script
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    // Always send a response
-    sendResponse({status: "received"});
-    
-    if (message.action === "updateTemplate" && message.template) {
-      // Update both storage locations
-      try {
-        // Update chrome storage
-        chrome.storage.local.set({ nameExtractorTemplate: message.template });
-        // Also update localStorage for failsafe
-        storeTemplateLocally(message.template);
-        // Update our in-memory cache
-        currentTemplate = message.template;
-        console.log('Template updated in content script:', message.template);
-      } catch (error) {
-        console.log('Error saving template:', error);
-      }
-    }
-    
-    // Return true to allow async response
-    return true;
-  });
-  
-  // Request the template if we can
-  chrome.runtime.sendMessage({ action: "getTemplate" }, response => {
-    if (chrome.runtime.lastError) {
-      console.log('Error requesting template (normal if extension reloaded):', 
-                 chrome.runtime.lastError.message);
-    }
-  });
-  
-  console.log('Message listeners initialized');
-} catch (error) {
-  console.log('Could not establish message listeners (normal if extension reloaded):', error);
-}
-
-// Set up click listeners with more robust selectors
-document.addEventListener('click', function(event) {
-  // Try multiple methods to find name elements
-  
-  // Method 1: Direct click on a name span
-  if (event.target.classList.contains('_ao3e') && event.target.getAttribute('dir') !== 'rtl') {
-    const name = event.target.textContent.trim().split(' ')[0];
-    if (name && name.length > 1) {
-      showName(name);
-      console.log('Method 1 found name:', name);
+  saveBtn.addEventListener('click', async () => {
+    const hebrewName = hebrewInput.value.trim();
+    if (!hebrewName) {
+      hebrewInput.style.borderColor = '#dc3545';
       return;
     }
-  }
-  
-  // Method 2: Check for any element with a title that looks like a name
-  const closestWithTitle = event.target.closest('[title]');
-  if (closestWithTitle && closestWithTitle.title && closestWithTitle.title.includes(' ')) {
-    const title = closestWithTitle.title.trim();
-    if (title && !title.includes('Status') && !title.includes('Photo')) {
-      const words = title.split(' ');
-      if (words.length <= 3) {
-        const name = words[0];
-        if (name && name.length > 1) {
-          showName(name);
-          console.log('Method 2 found name:', name);
-          return;
-        }
-      }
-    }
-  }
-  
-  // Method 3: List item with a name inside
-  const listItem = event.target.closest('[role="listitem"]');
-  if (listItem) {
-    // Try different selectors to find the name
-    const nameSpans = [
-      ...listItem.querySelectorAll('span[dir="auto"][title]'),
-      ...listItem.querySelectorAll('span._ao3e'),
-      ...listItem.querySelectorAll('span.x1iyjqo2')
-    ];
-    
-    for (const span of nameSpans) {
-      let name = '';
-      
-      // Try title attribute first, then text content
-      if (span.title && span.title.includes(' ')) {
-        name = span.title.trim().split(' ')[0];
-      } else if (span.textContent) {
-        name = span.textContent.trim().split(' ')[0];
-      }
-      
-      if (name && name.length > 1 && !name.includes('Status') && !name.includes('Photo')) {
-        showName(name);
-        console.log('Method 3 found name:', name);
-        return;
-      }
-    }
-  }
-});
+    const gender = shadow.querySelector('input[name="gender"]:checked').value;
 
-// Log that the script has loaded
-console.log('First Name Extractor content script loaded and running with resilient mode');
+    // Save to storage
+    try {
+      const stored = await chrome.storage.local.get('userNames');
+      const names = stored.userNames || {};
+      names[englishName.toLowerCase()] = { he: hebrewName, gender };
+      await chrome.storage.local.set({ userNames: names });
+      userNames = names; // Update local cache
+    } catch (err) {
+      console.error('[WA-Msg] Failed to save user name:', err);
+    }
+
+    cleanup();
+    onComplete(hebrewName, gender);
+  });
+
+  skipBtn.addEventListener('click', () => {
+    cleanup();
+    onComplete(englishName, 'm'); // Use English name with default masculine
+  });
+
+  backdrop.addEventListener('click', () => {
+    cleanup();
+    onComplete(null, null); // Cancel
+  });
+
+  // Enter key saves
+  hebrewInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') saveBtn.click();
+    if (e.key === 'Escape') backdrop.click();
+  });
+}
+
+// =============================================================================
+// Start
+// =============================================================================
+
+initialize();
