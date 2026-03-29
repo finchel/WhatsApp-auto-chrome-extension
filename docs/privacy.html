@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - WhatsApp Holiday Greeter</title>
+  <style>
+    body {
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 0 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+      color: #333;
+    }
+    h1 { color: #25D366; font-size: 24px; }
+    h2 { color: #111b21; font-size: 18px; margin-top: 28px; }
+    .updated { color: #667781; font-size: 14px; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 6px; }
+    .highlight { background: #f0f9f4; padding: 12px 16px; border-radius: 8px; border-left: 3px solid #25D366; margin: 16px 0; }
+    a { color: #25D366; }
+    .disclaimer { font-size: 13px; color: #667781; margin-top: 40px; border-top: 1px solid #e0e0e0; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p><strong>WhatsApp Holiday Greeter</strong> Chrome Extension</p>
+  <p class="updated">Last Updated: March 29, 2026</p>
+
+  <div class="highlight">
+    <strong>Summary:</strong> This extension stores all data locally on your device. It does not collect, transmit, or share any personal information. No analytics, no tracking, no external servers.
+  </div>
+
+  <h2>1. What Data the Extension Accesses</h2>
+  <p>This extension operates exclusively on the <code>web.whatsapp.com</code> website. When you click on a 1:1 chat in WhatsApp Web, the extension reads the contact's display name from the visible page content to translate it into Hebrew and generate a personalized greeting.</p>
+  <p>The extension does <strong>not</strong> read your messages, conversation history, media, or any other WhatsApp content.</p>
+
+  <h2>2. What Data is Stored</h2>
+  <p>The extension stores the following data locally on your device using Chrome's built-in storage API (<code>chrome.storage.local</code>):</p>
+  <ul>
+    <li>Custom greeting templates (male and female) that you configure</li>
+    <li>A mapping of English names to Hebrew names and genders that you manually enter through the unknown-name prompt</li>
+  </ul>
+  <p>This data never leaves your device.</p>
+
+  <h2>3. What Data is Collected or Transmitted</h2>
+  <p><strong>None.</strong> This extension:</p>
+  <ul>
+    <li>Does NOT collect any personal information</li>
+    <li>Does NOT transmit any data to external servers</li>
+    <li>Does NOT use analytics, tracking pixels, or telemetry</li>
+    <li>Does NOT use cookies</li>
+    <li>Does NOT make any network requests (all name translation uses a bundled local dictionary)</li>
+    <li>Does NOT access, read, or store your WhatsApp messages or conversations</li>
+    <li>Does NOT access your WhatsApp contacts list beyond the single name visible when you click a chat</li>
+  </ul>
+
+  <h2>4. Third-Party Services</h2>
+  <p>This extension uses no third-party services, APIs, or SDKs. It contains no AI components. All processing happens locally in your browser.</p>
+
+  <h2>5. Permissions Explained</h2>
+  <ul>
+    <li><strong>"storage"</strong> — Used to save your greeting templates and custom name mappings locally on your device.</li>
+    <li><strong>Host permission for web.whatsapp.com</strong> — Required to run the content script that detects chat clicks and inserts greeting messages on the WhatsApp Web page.</li>
+  </ul>
+
+  <h2>6. Data Retention and Deletion</h2>
+  <p>All data is stored locally in your browser. You can delete all extension data at any time by:</p>
+  <ul>
+    <li>Removing individual saved names from the extension popup</li>
+    <li>Uninstalling the extension (all data is automatically deleted)</li>
+    <li>Clearing Chrome extension storage via <code>chrome://settings</code></li>
+  </ul>
+
+  <h2>7. Import/Export Feature</h2>
+  <p>The extension allows you to export your saved name mappings as a JSON file and import name mappings from a JSON file. These files are stored on your local device and are never uploaded anywhere. You control who you share exported files with.</p>
+
+  <h2>8. Children's Privacy</h2>
+  <p>This extension is not directed at children under 13 and does not knowingly collect data from children.</p>
+
+  <h2>9. Changes to This Policy</h2>
+  <p>Any changes to this privacy policy will be posted at this URL with an updated "Last Updated" date.</p>
+
+  <h2>10. Contact</h2>
+  <p>For questions about this privacy policy or the extension, please open an issue on our <a href="https://github.com/finchel/WhatsApp-auto-chrome-extension/issues">GitHub repository</a>.</p>
+
+  <div class="disclaimer">
+    WhatsApp is a trademark of Meta Platforms, Inc. This extension is not affiliated with, endorsed by, or associated with WhatsApp or Meta.
+  </div>
+</body>
+</html>

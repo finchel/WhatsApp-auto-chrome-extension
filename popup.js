@@ -74,7 +74,20 @@ document.addEventListener('DOMContentLoaded', () => {
         item.className = 'name-item';
 
         const info = document.createElement('span');
-        info.innerHTML = `<span class="name-en">${key}</span> → <span class="name-he">${val.he}</span> <span class="name-gender">(${val.gender === 'f' ? 'נ' : 'ז'})</span>`;
+        const nameEn = document.createElement('span');
+        nameEn.className = 'name-en';
+        nameEn.textContent = key;
+        const nameHe = document.createElement('span');
+        nameHe.className = 'name-he';
+        nameHe.textContent = val.he;
+        const nameGender = document.createElement('span');
+        nameGender.className = 'name-gender';
+        nameGender.textContent = `(${val.gender === 'f' ? 'נ' : 'ז'})`;
+        info.appendChild(nameEn);
+        info.append(' \u2192 ');
+        info.appendChild(nameHe);
+        info.append(' ');
+        info.appendChild(nameGender);
 
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
@@ -149,11 +162,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Validate entries
+        const MAX_IMPORT_ENTRIES = 10000;
         let validCount = 0;
         const cleaned = {};
         for (const [key, val] of Object.entries(imported)) {
-          if (val && typeof val.he === 'string' && (val.gender === 'm' || val.gender === 'f')) {
-            cleaned[key.toLowerCase()] = { he: val.he, gender: val.gender };
+          if (validCount >= MAX_IMPORT_ENTRIES) break;
+          if (val && typeof val.he === 'string' && (val.gender === 'm' || val.gender === 'f')
+              && key.length > 0 && key.length <= 100
+              && val.he.length > 0 && val.he.length <= 100) {
+            cleaned[key.toLowerCase().trim()] = { he: val.he.trim(), gender: val.gender };
             validCount++;
           }
         }

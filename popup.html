@@ -165,6 +165,28 @@
     .import-status.visible { opacity: 1; }
     .import-status.success { color: #00a884; }
     .import-status.error { color: #dc3545; }
+    .footer-links {
+      text-align: center;
+      padding: 8px 0 4px;
+      font-size: 11px;
+    }
+    .footer-links a {
+      color: #667781;
+      text-decoration: none;
+      margin: 0 6px;
+    }
+    .footer-links a:hover { color: #00a884; }
+    .donate-link {
+      display: block;
+      text-align: center;
+      margin-top: 6px;
+      font-size: 11px;
+    }
+    .donate-link a {
+      color: #0070ba;
+      text-decoration: none;
+    }
+    .donate-link a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -198,6 +220,15 @@
       <input type="file" id="importFile" accept=".json">
     </div>
     <div id="importStatus" class="import-status"></div>
+  </div>
+
+  <div class="footer-links">
+    <a href="https://github.com/finchel/WhatsApp-auto-chrome-extension/issues" target="_blank">דיווח באג / בקשת תכונה</a>
+    &middot;
+    <a href="https://github.com/finchel/WhatsApp-auto-chrome-extension" target="_blank">GitHub</a>
+  </div>
+  <div class="donate-link">
+    <a href="https://www.paypal.com/paypalme/finchel" target="_blank">&#x2615; אהבתם? תתמכו בפרויקט</a>
   </div>
 
   <script src="popup.js"></script>

@@ -32,6 +32,9 @@
   "background": {
     "service_worker": "background.js"
   },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  },
   "web_accessible_resources": [
     {
       "resources": ["names.json"],

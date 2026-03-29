@@ -134,7 +134,7 @@ function guessHebrewGender(hebrewName) {
 function buildMessage(hebrewName, gender) {
   const effectiveGender = gender || 'm';
   const template = effectiveGender === 'f' ? templateFemale : templateMale;
-  return template.replace(/<name>/g, hebrewName);
+  return template.replace(/<name>/g, () => hebrewName);
 }
 
 // =============================================================================
@@ -260,14 +260,14 @@ async function handleChatClick(event) {
 
   // Skip phone numbers
   if (isPhoneNumber(fullName)) {
-    console.log('[WA-Msg] Skipping phone number:', fullName);
+    console.log('[WA-Msg] Skipping phone number contact');
     return;
   }
 
   const firstName = extractFirstName(fullName);
   if (!firstName || firstName.length < 2) return;
 
-  console.log('[WA-Msg] Clicked chat:', fullName, '→ first name:', firstName);
+  console.log('[WA-Msg] Processing chat click');
 
   try {
     // Small delay to let WhatsApp start switching chats
@@ -319,6 +319,16 @@ async function handleChatClick(event) {
 }
 
 // =============================================================================
+// Security Helpers
+// =============================================================================
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// =============================================================================
 // Toast Notification
 // =============================================================================
 
@@ -331,8 +341,8 @@ function showToast(message) {
   host.id = 'wa-msg-toast-host';
   const shadow = host.attachShadow({ mode: 'open' });
 
-  shadow.innerHTML = `
-    <style>
+  const style = document.createElement('style');
+  style.textContent = `
       .toast {
         position: fixed;
         top: 20px;
@@ -350,12 +360,14 @@ function showToast(message) {
         opacity: 0;
         transition: opacity 0.3s ease;
       }
-    </style>
-    <div class="toast">${message}</div>
   `;
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  shadow.appendChild(style);
+  shadow.appendChild(toast);
 
   document.body.appendChild(host);
-  const toast = shadow.querySelector('.toast');
 
   // Fade in
   requestAnimationFrame(() => { toast.style.opacity = '1'; });
@@ -476,7 +488,7 @@ function showUnknownNameOverlay(englishName, onComplete) {
     </style>
     <div class="backdrop"></div>
     <div class="overlay">
-      <h3>שם לא נמצא: <span class="english-name">${englishName}</span></h3>
+      <h3>שם לא נמצא: <span class="english-name">${escapeHtml(englishName)}</span></h3>
       <label>שם בעברית:</label>
       <input type="text" id="hebrew-input" placeholder="הקלידו את השם בעברית" />
       <div class="gender-row">
@@ -506,7 +518,7 @@ function showUnknownNameOverlay(englishName, onComplete) {
 
   saveBtn.addEventListener('click', async () => {
     const hebrewName = hebrewInput.value.trim();
-    if (!hebrewName) {
+    if (!hebrewName || hebrewName.length > 100) {
       hebrewInput.style.borderColor = '#dc3545';
       return;
     }

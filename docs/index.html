@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Holiday Greeter - ברכות חג אישיות בוואטסאפ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: #111b21;
+      background: #f0f2f5;
+      line-height: 1.6;
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+      color: white;
+      padding: 60px 20px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 36px; margin-bottom: 12px; }
+    .hero p { font-size: 18px; opacity: 0.9; max-width: 600px; margin: 0 auto 24px; }
+    .hero-badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .badge {
+      background: rgba(255,255,255,0.2);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    /* Section */
+    .section {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 48px 20px;
+    }
+    .section h2 {
+      font-size: 26px;
+      color: #25D366;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    /* Problem / Solution */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 24px 0;
+    }
+    @media (max-width: 600px) {
+      .comparison { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .card h3 { font-size: 18px; margin-bottom: 12px; }
+    .card.problem { border-top: 3px solid #dc3545; }
+    .card.problem h3 { color: #dc3545; }
+    .card.solution { border-top: 3px solid #25D366; }
+    .card.solution h3 { color: #25D366; }
+
+    /* Steps */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      margin: 24px 0;
+    }
+    .step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .step-num {
+      background: #25D366;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .step-content h3 { font-size: 16px; margin-bottom: 4px; }
+    .step-content p { color: #54656f; font-size: 14px; }
+
+    /* Demo animation */
+    .demo-container {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin: 24px 0;
+      text-align: center;
+    }
+    .demo-chat {
+      background: #e9edef;
+      border-radius: 8px;
+      padding: 16px;
+      max-width: 400px;
+      margin: 0 auto 16px;
+      text-align: right;
+    }
+    .demo-name {
+      font-weight: bold;
+      font-size: 15px;
+      color: #111b21;
+      margin-bottom: 4px;
+    }
+    .demo-arrow {
+      font-size: 24px;
+      color: #25D366;
+      margin: 12px 0;
+      animation: bounce 1.5s infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(8px); }
+    }
+    .demo-result {
+      background: #dcf8c6;
+      border-radius: 8px;
+      padding: 12px 16px;
+      max-width: 400px;
+      margin: 0 auto;
+      text-align: right;
+      font-size: 15px;
+      direction: rtl;
+    }
+
+    /* Features */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .feature {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .feature-icon { font-size: 32px; margin-bottom: 8px; }
+    .feature h3 { font-size: 14px; margin-bottom: 4px; }
+    .feature p { font-size: 12px; color: #54656f; }
+
+    /* No AI badge */
+    .no-ai {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin: 24px 0;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .no-ai-icon { font-size: 36px; }
+    .no-ai-text h3 { font-size: 15px; }
+    .no-ai-text p { font-size: 13px; color: #54656f; }
+
+    /* CTA */
+    .cta {
+      text-align: center;
+      padding: 48px 20px;
+      background: white;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: #25D366;
+      color: white;
+      padding: 14px 36px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .cta-btn:hover { background: #128C7E; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 24px 20px;
+      font-size: 12px;
+      color: #667781;
+    }
+    .footer a { color: #25D366; text-decoration: none; }
+    .support-links {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hero">
+    <h1>WhatsApp Holiday Greeter</h1>
+    <p>שלחו ברכות חג אישיות בעברית לכל אנשי הקשר שלכם בלחיצה אחת</p>
+    <div class="hero-badges">
+      <span class="badge">770+ שמות מתורגמים</span>
+      <span class="badge">מודע מגדר</span>
+      <span class="badge">100% מקומי ופרטי</span>
+      <span class="badge">ללא AI</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>הבעיה והפתרון</h2>
+    <div class="comparison">
+      <div class="card problem">
+        <h3>בלי התוסף</h3>
+        <p>מעתיקים את אותה ברכה גנרית, מדביקים בכל צ'אט, משנים ידנית את השם... שוב ושוב. בזבוז זמן ולא אישי.</p>
+        <p style="margin-top:12px; color:#999; font-style:italic;">"חג שמח לכולם!"</p>
+      </div>
+      <div class="card solution">
+        <h3>עם התוסף</h3>
+        <p>לוחצים על הצ'אט — הברכה האישית מופיעה אוטומטית עם השם בעברית ובמגדר הנכון. רק נשאר ללחוץ שלח.</p>
+        <p style="margin-top:12px; color:#25D366; font-weight:bold;">"דניאל היקר, מאחל לך חג פסח שמח ושקט!"</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>איך זה עובד</h2>
+
+    <div class="demo-container">
+      <div class="demo-chat">
+        <div class="demo-name">Daniel Finchelstein</div>
+        <div style="color:#667781; font-size:13px;">Last message...</div>
+      </div>
+      <div class="demo-arrow">&#8595; לחיצה &#8595;</div>
+      <div class="demo-result">
+        דניאל היקר, מאחל לך חג פסח שמח ושקט!
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>פתחו את וואטסאפ ווב</h3>
+          <p>היכנסו ל-web.whatsapp.com כרגיל. התוסף פועל ברקע.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>לחצו על צ'אט אישי</h3>
+          <p>התוסף מזהה אוטומטית את שם איש הקשר ומתרגם לעברית. קבוצות וערוצים מדולגים אוטומטית.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>הברכה מוכנה — רק לשלוח</h3>
+          <p>ההודעה המותאמת אישית מופיעה בתיבת ההודעה. בדקו ולחצו שלח.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>תכונות</h2>
+    <div class="features-grid">
+      <div class="feature">
+        <div class="feature-icon">&#x1F4D6;</div>
+        <h3>770+ שמות מתורגמים</h3>
+        <p>מילון מובנה עם שמות ישראליים, מערביים, רוסיים וערביים</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">&#x2640;&#x2642;</div>
+        <h3>מודע מגדר</h3>
+        <p>תבניות נפרדות לזכר ולנקבה, זיהוי מגדר אוטומטי</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">&#x270F;</div>
+        <h3>תבניות ניתנות לעריכה</h3>
+        <p>שנו את הברכה לכל חג ואירוע</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">&#x1F4BE;</div>
+        <h3>ייבוא/ייצוא שמות</h3>
+        <p>גבו את רשימת השמות או שתפו עם אחרים</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">&#x1F512;</div>
+        <h3>100% פרטי</h3>
+        <p>הכל רץ מקומית. אין שרתים, אין מעקב, אין נתונים שנשלחים</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">&#x26A1;</div>
+        <h3>קל וזריז</h3>
+        <p>אין AI, אין API — פשוט עובד, מהר</p>
+      </div>
+    </div>
+
+    <div class="no-ai">
+      <div class="no-ai-icon">&#x1F9E0;</div>
+      <div class="no-ai-text">
+        <h3>ללא AI — בכוונה</h3>
+        <p>לא הכל צריך בינה מלאכותית. התוסף הזה משתמש במילון מקומי ובכללים פשוטים כי זה כל מה שצריך. בלי עיכובים, בלי עלויות API, בלי שליחת השמות שלכם לשרתים חיצוניים. פשוט, מהיר, ופרטי.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h2 style="margin-bottom:16px;">התקינו עכשיו — חינם</h2>
+    <p style="color:#54656f; margin-bottom:24px;">חג פסח מתקרב. שלחו ברכות אישיות לכל אנשי הקשר שלכם.</p>
+    <a class="cta-btn" href="#">הוסיפו לכרום</a>
+    <p style="margin-top:12px; font-size:13px; color:#667781;">(הקישור יעודכן עם הפרסום בחנות)</p>
+  </div>
+
+  <div class="footer">
+    <div class="support-links">
+      <a href="https://github.com/finchel/WhatsApp-auto-chrome-extension/issues">דיווח באגים ובקשות תכונות</a>
+      &middot;
+      <a href="privacy.html">מדיניות פרטיות</a>
+      &middot;
+      <a href="https://github.com/finchel/WhatsApp-auto-chrome-extension">GitHub</a>
+    </div>
+    <p style="margin-top:12px;">
+      WhatsApp is a trademark of Meta Platforms, Inc. This extension is not affiliated with, endorsed by, or associated with WhatsApp or Meta.
+    </p>
+    <p style="margin-top:8px;">
+      <a href="https://www.paypal.com/paypalme/finchel" style="color:#0070ba;">&#x2615; אהבתם? תתמכו בפרויקט דרך PayPal</a>
+    </p>
+  </div>
+
+</body>
+</html>
