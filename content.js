@@ -76,6 +76,58 @@ function lookupName(firstName) {
 }
 
 // =============================================================================
+// Hebrew Name Gender Detection
+// =============================================================================
+
+// Common Hebrew names that are exceptions to suffix rules
+const HEBREW_GENDER_OVERRIDES = {
+  // Males ending in ה that would be guessed as female
+  'משה': 'm', 'אריה': 'm', 'עזרא': 'm', 'זכריה': 'm', 'עובדיה': 'm',
+  'נחמיה': 'm', 'ישעיה': 'm', 'ירמיה': 'm', 'הושע': 'm', 'יונה': 'm',
+  'סימחה': 'm', 'שמחה': 'm',
+  // Females that might be guessed wrong
+  'נועם': 'f', 'ענת': 'f', 'רות': 'f', 'ליאת': 'f', 'אורית': 'f',
+  'מיכל': 'f', 'יעל': 'f', 'רחל': 'f', 'אביגיל': 'f', 'עדי': 'f',
+  'שי': 'm', 'גיא': 'm', 'בועז': 'm', 'עמית': 'm', 'רועי': 'm',
+  // Unisex - default to most common usage
+  'טל': 'm', 'חן': 'f', 'שחר': 'm', 'ליאור': 'm', 'עומר': 'm',
+  'רותם': 'f', 'אגם': 'f', 'הלל': 'm', 'ארז': 'm', 'נועה': 'f',
+};
+
+function guessHebrewGender(hebrewName) {
+  const name = hebrewName.trim();
+
+  // Check overrides first
+  if (HEBREW_GENDER_OVERRIDES[name]) return HEBREW_GENDER_OVERRIDES[name];
+
+  // Also check user-saved names (they might have Hebrew keys)
+  const userEntry = userNames[name];
+  if (userEntry) return userEntry.gender;
+
+  // Suffix-based heuristics for Hebrew names
+  // Strong female indicators
+  if (name.endsWith('ית')) return 'f';  // דורית, שלומית, רונית
+  if (name.endsWith('לה')) return 'f';  // יעלה, גילה
+  if (name.endsWith('לי')) return 'f';  // טלי, נטלי, רותלי
+  if (name.endsWith('ני')) return 'f';  // רוני, דני (ambiguous but more common female)
+  if (name.endsWith('רה')) return 'f';  // שרה, דבורה, אורה
+  if (name.endsWith('נה')) return 'f';  // דינה, רינה, חנה
+  if (name.endsWith('קה')) return 'f';  // רבקה, מלכה, ריקה
+  if (name.endsWith('לה')) return 'f';  // גילה, דליה
+  if (name.endsWith('פה')) return 'f';  // יפה
+  if (name.endsWith('צה')) return 'f';  // רצה
+  if (name.endsWith('תה')) return 'f';  // ...
+  if (name.endsWith('פת')) return 'f';  // רקפת
+  if (name.endsWith('דה')) return 'f';  // עידה
+
+  // Names ending in ה are often female (but with exceptions caught above)
+  if (name.endsWith('ה') && name.length > 2) return 'f';
+
+  // Default to masculine
+  return 'm';
+}
+
+// =============================================================================
 // Message Building
 // =============================================================================
 
@@ -232,9 +284,10 @@ async function handleChatClick(event) {
 
     // Check if name is already Hebrew
     if (isHebrew(firstName)) {
-      const message = buildMessage(firstName, 'm'); // Default masculine for Hebrew names
+      const gender = guessHebrewGender(firstName);
+      const message = buildMessage(firstName, gender);
       insertIntoMessageInput(input, message);
-      showToast(`✓ ${firstName}`);
+      showToast(`✓ ${firstName} (${gender === 'f' ? 'נ' : 'ז'})`);
       return;
     }
 

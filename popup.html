@@ -133,6 +133,38 @@
       transition: opacity 0.3s;
     }
     .status.visible { opacity: 1; }
+    .import-export {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .import-export button {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid #d1d7db;
+      border-radius: 6px;
+      background: #f0f2f5;
+      color: #54656f;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .import-export button:hover {
+      background: #e2e5e9;
+    }
+    #importFile {
+      display: none;
+    }
+    .import-status {
+      font-size: 11px;
+      text-align: center;
+      margin-top: 4px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .import-status.visible { opacity: 1; }
+    .import-status.success { color: #00a884; }
+    .import-status.error { color: #dc3545; }
   </style>
 </head>
 <body>
@@ -160,6 +192,12 @@
       <span class="toggle-icon" id="toggleIcon">▶</span>
     </div>
     <div id="namesList"></div>
+    <div class="import-export">
+      <button id="exportBtn">ייצוא שמות</button>
+      <button id="importBtn">ייבוא שמות</button>
+      <input type="file" id="importFile" accept=".json">
+    </div>
+    <div id="importStatus" class="import-status"></div>
   </div>
 
   <script src="popup.js"></script>
