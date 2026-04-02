@@ -8,14 +8,23 @@ Chrome Extensions expert incorrectly said content scripts can access extension r
 ### WhatsApp DOM uses grid/row, not listitem
 As of March 2026, chat list is `[role="grid"][aria-label="Chat list"]` with `[role="row"]` children. NOT `role="listitem"`. Verify selectors on live DOM before coding.
 
-### WhatsApp uses Lexical editor
-Message input has `data-lexical-editor="true"`. Despite this, `execCommand('insertText')` still works and correctly activates the Send button.
+### WhatsApp uses Lexical editor — execCommand doesn't handle newlines
+Message input has `data-lexical-editor="true"`. `execCommand('insertText')` works for single-line text but **drops newlines**. `execCommand('insertLineBreak')` also fails silently in Lexical. The working approach is a synthetic `ClipboardEvent('paste')` with a `DataTransfer` containing `text/plain` — Lexical's paste handler correctly converts `\n` to line breaks.
+
+### Synthetic events: ClipboardEvent works, InputEvent doesn't
+Dispatching `InputEvent('beforeinput', { inputType: 'insertFromPaste' })` does NOT trigger Lexical's paste handling — the event fires but nothing gets inserted. `ClipboardEvent('paste')` with `clipboardData` set via `DataTransfer` works because Lexical listens for native paste events and reads from `clipboardData`.
 
 ### aria-label strings are locale-dependent
 Don't check for "type a message" — check for "to group"/"to channel" (and Hebrew equivalents "לקבוצה"/"לערוץ") to filter. Negative checks are more robust than positive checks.
 
 ### innerHTML with DOM-sourced data = XSS
 Contact names from WhatsApp could contain HTML/script tags. Always use textContent or createElement, never innerHTML with dynamic data. This applies to toast, overlay, and popup name list.
+
+### Consider the user's real workflow, not just the happy path
+User's actual flow is two-pass: click all chats to paste greetings, then click again to review and send. Without a draft-detection guard (`input.innerText.trim().length > 0`), the greeting gets pasted twice. Always think through repeat interactions.
+
+### Content script re-injection on extension reload
+When an extension is reloaded via chrome://extensions, old content scripts die but the page keeps stale code in memory. The new content script only injects on fresh page loads. To avoid requiring a manual WhatsApp refresh, `background.js` can re-inject `content.js` into matching tabs on `runtime.onInstalled`.
 
 ### Most WhatsApp chats have profile photos
 Only 5/70 chats had default `data-icon` (group-refreshed/contact-refreshed). Cannot rely on sidebar icons to distinguish 1:1 from group. Use aria-label on message input instead.

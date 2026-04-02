@@ -1,6 +1,6 @@
 # Progress — WhatsApp Holiday Greeter
 
-## Last Session: 2026-03-29/30
+## Last Session: 2026-04-01/02
 
 ### Completed
 - [x] Full v2.0 rewrite of extension (content.js, popup.html, popup.js, manifest.json, background.js)
@@ -28,10 +28,16 @@
 - [ ] Create ZIP (manifest.json, background.js, content.js, popup.html, popup.js, names.json, images/)
 - [ ] Submit with English+Hebrew descriptions, privacy policy URL, screenshots
 
+### Recently Fixed (2026-04-01)
+- [x] Multiline messages now preserve line breaks (ClipboardEvent paste approach)
+- [x] Two-pass workflow: skip insertion when editor has a draft
+
 ### Known Issues / Polish
 - Icon text "ברכה" not readable at 16px (expected — too small)
 - Some common Israeli names may still be missing from dictionary (user can add via overlay)
 - Landing page CTA button href is "#" — needs Chrome Web Store URL once published
+- Extension reload requires manual WhatsApp Web refresh (could add auto re-injection in background.js)
+- Git push auth: DanielFinchel account lacks push access to finchel/WhatsApp-auto-chrome-extension
 
 ### Blocked On
 - Nothing — ready to proceed with store submission when user returns

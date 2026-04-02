@@ -8,21 +8,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleIcon = document.getElementById('toggleIcon');
   const namesList = document.getElementById('namesList');
 
+  // Auto-resize textarea to fit content
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
   // Load saved templates
   chrome.storage.local.get(['templateMale', 'templateFemale'], (result) => {
     if (result.templateMale) templateMaleEl.value = result.templateMale;
     if (result.templateFemale) templateFemaleEl.value = result.templateFemale;
     validate();
+    autoResize(templateMaleEl);
+    autoResize(templateFemaleEl);
   });
 
   // Auto-save on input
   let saveTimeout;
   templateMaleEl.addEventListener('input', () => {
     validate();
+    autoResize(templateMaleEl);
     debounceSave();
   });
   templateFemaleEl.addEventListener('input', () => {
     validate();
+    autoResize(templateFemaleEl);
     debounceSave();
   });
 
