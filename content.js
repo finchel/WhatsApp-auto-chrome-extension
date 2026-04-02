@@ -195,40 +195,17 @@ function insertIntoMessageInput(input, text) {
   sel.removeAllRanges();
   sel.addRange(range);
 
-  // Primary: execCommand (verified working with WhatsApp's Lexical editor)
-  const success = document.execCommand('insertText', false, text);
+  // Simulate a paste event to preserve newlines.
+  // WhatsApp's Lexical editor handles ClipboardEvent paste correctly.
+  const dt = new DataTransfer();
+  dt.setData('text/plain', text);
 
-  if (!success) {
-    console.warn('[WA-Msg] execCommand failed, using DataTransfer fallback');
-    const dt = new DataTransfer();
-    dt.setData('text/plain', text);
-
-    const beforeInput = new InputEvent('beforeinput', {
-      inputType: 'insertFromPaste',
-      dataTransfer: dt,
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-    });
-
-    if (input.dispatchEvent(beforeInput)) {
-      const textNode = document.createTextNode(text);
-      const r = sel.getRangeAt(0);
-      r.deleteContents();
-      r.insertNode(textNode);
-      r.setStartAfter(textNode);
-      r.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(r);
-
-      input.dispatchEvent(new InputEvent('input', {
-        inputType: 'insertFromPaste',
-        dataTransfer: dt,
-        bubbles: true,
-        composed: true,
-      }));
-    }
-  }
+  const pasteEvent = new ClipboardEvent('paste', {
+    clipboardData: dt,
+    bubbles: true,
+    cancelable: true,
+  });
+  input.dispatchEvent(pasteEvent);
 
   return true;
 }
@@ -279,6 +256,12 @@ async function handleChatClick(event) {
     // Only process 1:1 chats
     if (!isOneOnOneChat(input)) {
       console.log('[WA-Msg] Skipping non-1:1 chat');
+      return;
+    }
+
+    // Skip if editor already has content (draft from previous click)
+    if (input.innerText.trim().length > 0) {
+      console.log('[WA-Msg] Skipping - editor already has a draft');
       return;
     }
 
