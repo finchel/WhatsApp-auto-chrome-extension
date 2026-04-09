@@ -160,6 +160,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (file.size > 1024 * 1024) {
+      showImportStatus('הקובץ גדול מדי (מקסימום 1MB)', 'error');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
