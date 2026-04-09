@@ -26,5 +26,11 @@ User's actual flow is two-pass: click all chats to paste greetings, then click a
 ### Content script re-injection on extension reload
 When an extension is reloaded via chrome://extensions, old content scripts die but the page keeps stale code in memory. The new content script only injects on fresh page loads. To avoid requiring a manual WhatsApp refresh, `background.js` can re-inject `content.js` into matching tabs on `runtime.onInstalled`.
 
+### Read context/lessons.md BEFORE acting on security audit recommendations
+When running automated security analysis (e.g., exploitation-validator), the LLM may recommend removing `web_accessible_resources` because "content scripts don't need it." This is WRONG — the project already documented (lesson #1 above) that WAR IS required for `fetch(chrome.runtime.getURL())` in content scripts. Always cross-check audit recommendations against existing lessons before applying fixes. This mistake led to a commit that had to be immediately reverted.
+
+### VULN-006 (WAR fingerprinting) is a known acceptable trade-off
+The WAR declaration for names.json is required for functionality and scoped to `web.whatsapp.com/*` only. Extension fingerprinting via WAR is an accepted trade-off. Don't try to "fix" this again.
+
 ### Most WhatsApp chats have profile photos
 Only 5/70 chats had default `data-icon` (group-refreshed/contact-refreshed). Cannot rely on sidebar icons to distinguish 1:1 from group. Use aria-label on message input instead.
